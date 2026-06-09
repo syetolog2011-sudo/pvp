@@ -2,33 +2,121 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvP Рулетка Pchelmed</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pchelmed Roulette PvP</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/telegram-web-app/8.0.0/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        .balance-container {
+            background: #2c2c2c;
+            padding: 10px 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border: 1px solid #ffcc00;
+        }
+        .wheel-box {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px auto;
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 5px solid #ffcc00;
+            background: conic-gradient(#333 0%, #444 100%);
+            transition: transform 7s cubic-bezier(0.25, 0.1, 0.1, 1);
+        }
+        .arrow {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #ffcc00;
+            z-index: 10;
+        }
+        .status-box {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 30px;
+            color: #ffcc00;
+        }
+        .input-bet {
+            width: 80%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #444;
+            background: #2c2c2c;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        .input-bet:focus {
+            border-color: #ffcc00;
+        }
+        .btn-bet {
+            width: 85%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: #ffcc00;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-bet:disabled {
+            background: #555;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="game-container">
-        <div id="balance-container">
-            Твой баланс: <span id="user-balance">Загрузка...</span> 🍯
+    <div class="container">
+        <div class="balance-container">
+            🐝 Твой мёд: <span id="user-honey">Загрузка...</span>
         </div>
 
-        <h2>PvP Рулетка</h2>
-        
-        <h3 id="timer-text">Ожидание сервера...</h3>
-        
-        <div class="pointer"></div>
-        
-        <div class="wheel-outer">
-            <div class="wheel" id="wheel"></div>
+        <div class="wheel-box">
+            <div class="arrow"></div>
+            <div id="roulette-wheel" class="wheel"></div>
         </div>
 
-        <div class="bet-input-container">
-            <input type="number" id="bet-amount-input" value="100" min="10" placeholder="Ваша ставка">
-        </div>
+        <div id="status-text" class="status-box">Ожидание сервера...</div>
 
-        <button id="spin-btn" class="btn" disabled>Загрузка...</button>
+        <input type="number" id="bet-amount" class="input-bet" placeholder="Введите сумму ставки" min="1">
+        <button id="place-bet-btn" class="btn-bet" disabled>Поставить мёд</button>
     </div>
 
     <script type="module" src="script.js"></script>
