@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co/rest/v1/'
+const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -21,7 +21,7 @@ const betInput = document.getElementById('bet-amount-input');
 let currentBalance = 0; 
 wheel.style.background = '#333333';
 
-// Загрузка баланса мёда из таблицы пользователей бота (users)
+// Подгрузка баланса мёда из основной таблицы пользователей бота
 async function loadUserBalance() {
     const { data, error } = await supabase
         .from('users') 
@@ -38,7 +38,7 @@ async function loadUserBalance() {
     }
 }
 
-// Отрисовка секторов круга
+// Перерисовка долей круга на основе текущих ставок участников раунда
 function redrawWheel(bets) {
     if (!bets || bets.length === 0) {
         wheel.style.background = '#333333';
@@ -59,7 +59,7 @@ function redrawWheel(bets) {
     wheel.style.background = `conic-gradient(${gradientString})`;
 }
 
-// Отправка кастомной ставки
+// При клике отправляем ставку, введенную игроком в поле ввода
 spinBtn.addEventListener('click', async () => {
     const betAmount = parseInt(betInput.value);
 
@@ -76,13 +76,13 @@ spinBtn.addEventListener('click', async () => {
     currentBalance -= betAmount;
     balanceText.innerText = currentBalance;
 
-    // Списываем мёд в таблице бота
+    // Списываем мёд у пользователя в таблице users
     await supabase
         .from('users')
         .update({ honey: currentBalance })
         .eq('telegram_id', myUserId);
 
-    // Добавляем ставку в рулетку
+    // Добавляем ставку в таблицу текущего раунда рулетки
     await supabase
         .from('jackpot_bets')
         .insert([{ 
@@ -95,7 +95,7 @@ spinBtn.addEventListener('click', async () => {
     spinBtn.innerText = "Ставка принята!";
 });
 
-// Слушаем ставки игроков
+// Слушаем через веб-сокеты появление ставок других игроков
 supabase
     .channel('jackpot_bets_changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'jackpot_bets' }, async () => {
@@ -104,7 +104,7 @@ supabase
     })
     .subscribe();
 
-// Слушаем сервер и таймер
+// Слушаем веб-сокеты таймера раунда и победного исхода от Python-сервера
 supabase
     .channel('game_state_changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, (payload) => {
@@ -128,9 +128,11 @@ supabase
             timerText.innerText = `🎉 Победил: ${data.winner}!`;
             spinBtn.disabled = true;
             
+            // Запускаем плавную прокрутку колеса на полученный от сервера градус
             const finalSpin = 1800 + data.time_left;
             wheel.style.transform = `rotate(${finalSpin}deg)`;
             
+            // Спустя 6 секунд (когда колесо остановится) обновляем баланс на экране
             setTimeout(() => {
                 loadUserBalance();
             }, 6000);
