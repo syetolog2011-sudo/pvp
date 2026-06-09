@@ -12,20 +12,17 @@
     <div class="game-container">
         <h2>PvP Рулетка</h2>
         
+        <h3 id="timer-text">Ожидание сервера...</h3>
+        
         <div class="pointer"></div>
         
         <div class="wheel-outer">
             <div class="wheel" id="wheel"></div>
         </div>
 
-        <div class="stats">
-            <p>Ваша ставка (Игрок 1): <span id="p1-bet">500</span> 🪙 (Шанс: <span id="p1-chance">0</span>%)</p>
-            <p>Соперник (Игрок 2): <span id="p2-bet">250</span> 🪙 (Шанс: <span id="p2-chance">0</span>%)</p>
-        </div>
-
-        <button id="spin-btn" class="btn">Тест Прокрутки</button>
+        <button id="spin-btn" class="btn" disabled>Загрузка...</button>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
