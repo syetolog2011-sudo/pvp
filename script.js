@@ -1,6 +1,8 @@
+const supabase = ... // <-- Лишний дубль на 1-й строчке!
 const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'; // Твой sb_publishable_...
+const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp...';
 
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Вызов функции через глобальное окно браузера, CORS больше не страшен
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
