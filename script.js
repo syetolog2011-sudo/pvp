@@ -1,148 +1,142 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import { createClient } from 'https://unpkg.com/@supabase/supabase-js@2.43.4/dist/esm/index.js'
 
-const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'; // Твой sb_publishable_...
 
-const tg = window.Telegram.WebApp;
-tg.ready();
-const myUserId = tg.initDataUnsafe?.user?.id?.toString() || "123456789"; 
-const myName = tg.initDataUnsafe?.user?.first_name || "Игрок";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const playerColors = ['#f1c40f', '#8e44ad', '#e74c3c', '#2ecc71', '#3498db', '#e67e22', '#1abc9c', '#fd79a8'];
-const myColor = playerColors[Math.floor(Math.random() * playerColors.length)];
+// Безопасная инициализация Telegram Web App
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+let userId = "12345678"; // Тестовый ID для браузера на ПК
+let userName = "Игрок";
 
-const wheel = document.getElementById('wheel');
-const spinBtn = document.getElementById('spin-btn');
-const timerText = document.getElementById('timer-text');
-const balanceText = document.getElementById('user-balance');
-const betInput = document.getElementById('bet-amount-input');
-
-let currentBalance = 0; 
-wheel.style.background = '#333333';
-
-// Подгрузка баланса мёда из основной таблицы пользователей бота
-async function loadUserBalance() {
-    const { data, error } = await supabase
-        .from('users') 
-        .select('honey') 
-        .eq('telegram_id', myUserId)
-        .single();
-
-    if (data) {
-        currentBalance = data.honey;
-        balanceText.innerText = currentBalance;
-    } else {
-        currentBalance = 5000; 
-        balanceText.innerText = currentBalance + " (Тест)";
+if (tg) {
+    tg.ready();
+    tg.expand();
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        userId = String(tg.initDataUnsafe.user.id);
+        userName = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name || "Игрок";
     }
 }
 
-// Перерисовка долей круга на основе текущих ставок участников раунда
-function redrawWheel(bets) {
-    if (!bets || bets.length === 0) {
-        wheel.style.background = '#333333';
-        return;
-    }
-    const totalBank = bets.reduce((sum, b) => sum + b.bet_amount, 0);
-    let currentAngle = 0;
-    let gradientString = "";
+// Элементы интерфейса
+const honeyEl = document.getElementById('user-honey');
+const statusEl = document.getElementById('status-text');
+const betInput = document.getElementById('bet-amount');
+const betBtn = document.getElementById('place-bet-btn');
+const wheelEl = document.getElementById('roulette-wheel');
 
-    bets.forEach((bet, index) => {
-        const chance = (bet.bet_amount / totalBank) * 100;
-        const playerAngle = (chance / 100) * 360;
-        const nextAngle = currentAngle + playerAngle;
-        gradientString += `${bet.color} ${currentAngle}deg ${nextAngle}deg`;
-        if (index < bets.length - 1) gradientString += ", ";
-        currentAngle = nextAngle;
-    });
-    wheel.style.background = `conic-gradient(${gradientString})`;
-}
+let currentHoney = 0;
+let canPlaceBets = false;
 
-// При клике отправляем ставку, введенную игроком в поле ввода
-spinBtn.addEventListener('click', async () => {
-    const betAmount = parseInt(betInput.value);
+// 1. Получаем баланс пользователя из таблицы 'users'
+async function loadUserData() {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('honey')
+            .eq('telegram_id', userId)
+            .single();
 
-    if (isNaN(betAmount) || betAmount <= 0) {
-        alert("Введите правильную сумму ставки!");
-        return;
-    }
-    if (betAmount > currentBalance) {
-        alert("Недостаточно меда на балансе!");
-        return;
-    }
+        if (error) throw error;
 
-    spinBtn.disabled = true;
-    currentBalance -= betAmount;
-    balanceText.innerText = currentBalance;
-
-    // Списываем мёд у пользователя в таблице users
-    await supabase
-        .from('users')
-        .update({ honey: currentBalance })
-        .eq('telegram_id', myUserId);
-
-    // Добавляем ставку в таблицу текущего раунда рулетки
-    await supabase
-        .from('jackpot_bets')
-        .insert([{ 
-            user_id: myUserId, 
-            user_name: myName, 
-            bet_amount: betAmount, 
-            color: myColor 
-        }]);
-        
-    spinBtn.innerText = "Ставка принята!";
-});
-
-// Слушаем через веб-сокеты появление ставок других игроков
-supabase
-    .channel('jackpot_bets_changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'jackpot_bets' }, async () => {
-        const { data: allBets } = await supabase.from('jackpot_bets').select('*');
-        redrawWheel(allBets);
-    })
-    .subscribe();
-
-// Слушаем веб-сокеты таймера раунда и победного исхода от Python-сервера
-supabase
-    .channel('game_state_changes')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, (payload) => {
-        const data = payload.new;
-
-        if (data.status === 'waiting') {
-            timerText.style.color = '#f1c40f';
-            timerText.innerText = `До прокрутки: ${data.time_left} сек`;
-            spinBtn.disabled = false;
-            spinBtn.innerText = "Поставить 🪙";
-        } 
-        
-        if (data.status === 'spinning') {
-            timerText.style.color = '#e74c3c';
-            timerText.innerText = `Ставки закрыты!`;
-            spinBtn.disabled = true;
+        if (data) {
+            currentHoney = int8(data.honey) || 0;
+            honeyEl.innerText = `${currentHoney} 🍯`;
         }
-
-        if (data.status === 'result') {
-            timerText.style.color = '#2ecc71';
-            timerText.innerText = `🎉 Победил: ${data.winner}!`;
-            spinBtn.disabled = true;
-            
-            // Запускаем плавную прокрутку колеса на полученный от сервера градус
-            const finalSpin = 1800 + data.time_left;
-            wheel.style.transform = `rotate(${finalSpin}deg)`;
-            
-            // Спустя 6 секунд (когда колесо остановится) обновляем баланс на экране
-            setTimeout(() => {
-                loadUserBalance();
-            }, 6000);
-        }
-    })
-    .subscribe();
-
-async function initGame() {
-    await loadUserBalance();
-    const { data: currentBets } = await supabase.from('jackpot_bets').select('*');
-    if (currentBets) redrawWheel(currentBets);
+    } catch (err) {
+        console.error("Ошибка загрузки профиля:", err);
+        honeyEl.innerText = "Ошибка ❌";
+    }
 }
-initGame();
+
+// 2. Функция отправки ставки в базу
+async function placeBet() {
+    const amount = parseInt(betInput.value);
+    if (isNaN(amount) || amount <= 0) {
+        alert("Введите корректную сумму!");
+        return;
+    }
+    if (amount > currentHoney) {
+        alert("Недостаточно мёда!");
+        return;
+    }
+
+    betBtn.disabled = true;
+
+    try {
+        // Списываем мёд у пользователя в локальном интерфейсе
+        currentHoney -= amount;
+        honeyEl.innerText = `${currentHoney} 🍯`;
+
+        // Отправляем ставку в jackpot_bets
+        const { error } = await supabase.from('jackpot_bets').insert([
+            { user_id: userId, user_name: userName, bet_amount: amount }
+        ]);
+
+        if (error) throw error;
+        alert("Ставка успешно принята!");
+    } catch (err) {
+        console.error("Ошибка при ставке:", err);
+        alert("Сбой при отправке ставки.");
+        betBtn.disabled = false;
+    }
+}
+
+// 3. Обработка изменений состояния игры от Python-сервера
+function updateUI(gameState) {
+    const { status, time_left, winner } = gameState;
+
+    if (status === 'waiting') {
+        statusEl.innerText = `До начала: ${time_left} сек`;
+        betBtn.disabled = false;
+        canPlaceBets = true;
+    } else if (status === 'spinning') {
+        statusEl.innerText = `🎰 Ставки закрыты! Крутим...`;
+        betBtn.disabled = true;
+        canPlaceBets = false;
+    } else if (status === 'result') {
+        canPlaceBets = false;
+        betBtn.disabled = true;
+        
+        // Поворачиваем колесо на выигранный градус
+        const degree = parseInt(time_left) || 0;
+        const totalSpins = 3600; // 10 полных оборотов для красоты
+        wheelEl.style.transform = `rotate(${totalSpins + degree}deg)`;
+        
+        statusEl.innerText = `🎉 Победил: ${winner}!`;
+        
+        // Через 6 секунд сбрасываем анимацию колеса назад
+        setTimeout(() => {
+            wheelEl.style.transition = 'none';
+            wheelEl.style.transform = 'rotate(0deg)';
+            setTimeout(() => { wheelEl.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.1, 1)'; }, 50);
+            loadUserData(); // Обновляем баланс после выигрыша
+        }, 6500);
+    }
+}
+
+// 4. Подписка на Realtime веб-сокеты таблицы game_state
+async function initRealtime() {
+    // Сначала загружаем текущее состояние из базы напрямую
+    const { data } = await supabase.from('game_state').select('*').eq('id', 1).single();
+    if (data) updateUI(data);
+
+    // Подключаем живой канал сокетов
+    supabase.channel('public:game_state')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, (payload) => {
+            if (payload.new) {
+                updateUI(payload.new);
+            }
+        })
+        .subscribe((status) => {
+            console.log("Статус подключения к сокетам Supabase:", status);
+        });
+}
+
+// Слушатель на кнопку ставки
+betBtn.addEventListener('click', placeBet);
+
+// Старт
+loadUserData();
+initRealtime();
