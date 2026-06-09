@@ -1,13 +1,12 @@
-import { createClient } from 'https://unpkg.com/@supabase/supabase-js@2.43.4/dist/esm/index.js'
-
 const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'; // Твой sb_publishable_...
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Вызов функции через глобальное окно браузера, CORS больше не страшен
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Безопасная инициализация Telegram Web App
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-let userId = "12345678"; // Тестовый ID для браузера на ПК
+let userId = "12345678"; 
 let userName = "Игрок";
 
 if (tg) {
@@ -41,7 +40,7 @@ async function loadUserData() {
         if (error) throw error;
 
         if (data) {
-            currentHoney = int8(data.honey) || 0;
+            currentHoney = parseInt(data.honey) || 0;
             honeyEl.innerText = `${currentHoney} 🍯`;
         }
     } catch (err) {
@@ -65,11 +64,9 @@ async function placeBet() {
     betBtn.disabled = true;
 
     try {
-        // Списываем мёд у пользователя в локальном интерфейсе
         currentHoney -= amount;
         honeyEl.innerText = `${currentHoney} 🍯`;
 
-        // Отправляем ставку в jackpot_bets
         const { error } = await supabase.from('jackpot_bets').insert([
             { user_id: userId, user_name: userName, bet_amount: amount }
         ]);
@@ -99,30 +96,26 @@ function updateUI(gameState) {
         canPlaceBets = false;
         betBtn.disabled = true;
         
-        // Поворачиваем колесо на выигранный градус
         const degree = parseInt(time_left) || 0;
-        const totalSpins = 3600; // 10 полных оборотов для красоты
+        const totalSpins = 3600; 
         wheelEl.style.transform = `rotate(${totalSpins + degree}deg)`;
         
         statusEl.innerText = `🎉 Победил: ${winner}!`;
         
-        // Через 6 секунд сбрасываем анимацию колеса назад
         setTimeout(() => {
             wheelEl.style.transition = 'none';
             wheelEl.style.transform = 'rotate(0deg)';
             setTimeout(() => { wheelEl.style.transition = 'transform 7s cubic-bezier(0.25, 0.1, 0.1, 1)'; }, 50);
-            loadUserData(); // Обновляем баланс после выигрыша
+            loadUserData(); 
         }, 6500);
     }
 }
 
 // 4. Подписка на Realtime веб-сокеты таблицы game_state
 async function initRealtime() {
-    // Сначала загружаем текущее состояние из базы напрямую
     const { data } = await supabase.from('game_state').select('*').eq('id', 1).single();
     if (data) updateUI(data);
 
-    // Подключаем живой канал сокетов
     supabase.channel('public:game_state')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, (payload) => {
             if (payload.new) {
@@ -134,7 +127,6 @@ async function initRealtime() {
         });
 }
 
-// Слушатель на кнопку ставки
 betBtn.addEventListener('click', placeBet);
 
 // Старт
