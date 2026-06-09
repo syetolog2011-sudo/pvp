@@ -10,6 +10,10 @@
 <body>
 
     <div class="game-container">
+        <div id="balance-container">
+            Твой баланс: <span id="user-balance">Загрузка...</span> 🍯
+        </div>
+
         <h2>PvP Рулетка</h2>
         
         <h3 id="timer-text">Ожидание сервера...</h3>
@@ -18,6 +22,10 @@
         
         <div class="wheel-outer">
             <div class="wheel" id="wheel"></div>
+        </div>
+
+        <div class="bet-input-container">
+            <input type="number" id="bet-amount-input" value="100" min="10" placeholder="Ваша ставка">
         </div>
 
         <button id="spin-btn" class="btn" disabled>Загрузка...</button>
