@@ -1,9 +1,7 @@
-const supabase = ... // <-- Лишний дубль на 1-й строчке!
 const SUPABASE_URL = 'https://otibfsqphueechyhrfef.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp...';
+const SUPABASE_ANON_KEY = 'sb_publishable_rjhxwSlY6YUh5QZ5VvKNzA_jPRMruCp'; 
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// Вызов функции через глобальное окно браузера, CORS больше не страшен
+// Создаем клиент один раз через глобальный объект window (CORS обойден)
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Безопасная инициализация Telegram Web App
