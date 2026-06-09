@@ -42,7 +42,7 @@ body {
     border-right: 15px solid transparent;
     border-top: 25px solid #ff4757;
     position: absolute;
-    top: 130px; /* Смещено под блок баланса */
+    top: 130px; 
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
