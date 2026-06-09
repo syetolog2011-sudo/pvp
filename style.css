@@ -1,3 +1,22 @@
+body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.game-container {
+    text-align: center;
+    position: relative;
+    width: 90%;
+    max-width: 400px;
+}
+
 #balance-container {
     background: #222;
     padding: 8px 15px;
@@ -7,6 +26,44 @@
     font-weight: bold;
     color: #f1c40f;
     border: 1px solid #444;
+}
+
+#timer-text {
+    font-size: 20px;
+    color: #f1c40f;
+    margin-bottom: 10px;
+    height: 24px;
+}
+
+.pointer {
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid #ff4757;
+    position: absolute;
+    top: 130px; /* Смещено под блок баланса */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.wheel-outer {
+    width: 280px;
+    height: 280px;
+    margin: 20px auto;
+    border: 5px solid #fff;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform: rotate(0deg);
+    transition: transform 5s cubic-bezier(0.1, 0.8, 0.3, 1);
 }
 
 .bet-input-container {
@@ -27,4 +84,22 @@
 
 #bet-amount-input:focus {
     border-color: #2ed573;
+}
+
+.btn {
+    background-color: #2ed573;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    width: 100%;
+    font-weight: bold;
+}
+
+.btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
 }
